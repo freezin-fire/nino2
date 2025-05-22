@@ -1,0 +1,1 @@
+/home/freezinfire/devlopment/git/nino2/target/debug/nino2: /home/freezinfire/devlopment/git/nino2/src/buffer.rs /home/freezinfire/devlopment/git/nino2/src/editor.rs /home/freezinfire/devlopment/git/nino2/src/main.rs
