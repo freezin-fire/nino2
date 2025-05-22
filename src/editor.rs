@@ -8,6 +8,8 @@ use crossterm::{
     terminal,
 };
 
+use crate::buffer::Buffer;
+
 enum Action {
     Quit,
 
@@ -28,6 +30,7 @@ enum Mode {
 }
 
 pub struct Editor {
+    buffer: Buffer,
     stdout: std::io::Stdout,
     size: (u16, u16),
     cx: u16,
@@ -44,7 +47,7 @@ impl Drop for Editor {
 }
 
 impl Editor {
-    pub fn new() -> anyhow::Result<Self> {
+    pub fn new(buffer: Buffer) -> anyhow::Result<Self> {
         let mut stdout = stdout();
         terminal::enable_raw_mode()?;
         stdout
@@ -52,6 +55,7 @@ impl Editor {
             .execute(terminal::Clear(terminal::ClearType::All))?;
 
         Ok(Editor {
+            buffer,
             stdout,
             cx: 0,
             cy: 0,
@@ -61,6 +65,7 @@ impl Editor {
     }
 
     pub fn draw(&mut self) -> anyhow::Result<()> {
+        self.draw_buffer()?;
         self.draw_statusline()?;
         self.stdout.queue(cursor::MoveTo(self.cx, self.cy))?;
         self.stdout.flush()?;
@@ -68,10 +73,19 @@ impl Editor {
         Ok(())
     }
 
+    pub fn draw_buffer(&mut self) -> anyhow::Result<()> {
+        for (i, line) in self.buffer.lines.iter().enumerate() {
+            self.stdout.queue(cursor::MoveTo(0, i as u16))?;
+            self.stdout.queue(style::Print(line))?;
+        }
+
+        Ok(())
+    }
+
     pub fn draw_statusline(&mut self) -> anyhow::Result<()> {
         let mode = format!(" {:?} ", self.mode).to_uppercase();
 
-        let file = " src/main.rs";
+        let file = format!(" {}", self.buffer.file.as_deref().unwrap_or("No Name"));
 
         let pos = format!(" {}:{} ", self.cx, self.cy);
 
